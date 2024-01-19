@@ -2,6 +2,9 @@ package org.halilkrkn.jwtauthenticationandauthorization.auth;
 
 import lombok.RequiredArgsConstructor;
 import org.halilkrkn.jwtauthenticationandauthorization.config.jwt.JwtService;
+import org.halilkrkn.jwtauthenticationandauthorization.token.Token;
+import org.halilkrkn.jwtauthenticationandauthorization.repository.TokenRepository;
+import org.halilkrkn.jwtauthenticationandauthorization.token.TokenType;
 import org.halilkrkn.jwtauthenticationandauthorization.repository.UserRepository;
 import org.halilkrkn.jwtauthenticationandauthorization.user.Role;
 import org.halilkrkn.jwtauthenticationandauthorization.user.User;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class AuthenticationService {
 
     private final UserRepository userRepository;
+    private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -27,8 +31,9 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
                 .build();
-        userRepository.save(user);
+        var savedUser = userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
+        saveUserToken(savedUser, jwtToken);
         return AuthenticationResponse.builder()
                 .jwtToken(jwtToken)
                 .build();
@@ -41,11 +46,42 @@ public class AuthenticationService {
                         request.getPassword()
                 )
         );
+
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
         var jwtToken = jwtService.generateToken(user);
+        revokeAllUserTokens(user);
+        saveUserToken(user,jwtToken);
         return AuthenticationResponse.builder()
                 .jwtToken(jwtToken)
                 .build();
     }
+
+    private void saveUserToken(User user, String jwtToken) {
+        var token = Token.builder()
+                .user(user)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .revoked(false)
+                .expired(false)
+                .build();
+        tokenRepository.save(token);
+    }
+
+    private void revokeAllUserTokens(User user) {
+        var validUserTokens = tokenRepository.findAllValidTokenByUserId(user.getId());
+
+       if (validUserTokens.isEmpty()) {
+            return;
+        }
+
+        validUserTokens.forEach(token -> {
+            token.setExpired(true);
+            token.setRevoked(true);
+        });
+
+        tokenRepository.saveAll(validUserTokens);
+    }
+
+
 
 }
