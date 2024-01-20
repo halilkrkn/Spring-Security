@@ -15,6 +15,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
+import static org.halilkrkn.jwtauthenticationandauthorization.user.Permission.*;
+import static org.halilkrkn.jwtauthenticationandauthorization.user.Role.*;
+import static org.springframework.http.HttpMethod.*;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -24,6 +28,7 @@ public class SecurityConfiguration {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
     private final LogoutHandler logoutHandler;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
@@ -33,6 +38,25 @@ public class SecurityConfiguration {
                                 authorizeHttpRequests
                                         .requestMatchers("/api/v1/auth/**")
                                         .permitAll()
+
+                                        // Burada management endpoint'i için ADMIN ve MANAGER'e rol ve yetkilendirme verdik.
+                                        .requestMatchers("/api/v1/management/**").hasAnyRole(ADMIN.name(), MANAGER.name())
+                                        .requestMatchers(GET, "/api/v1/management/**").hasAnyAuthority(ADMIN_READ.name(), MANAGER_READ.name())
+                                        .requestMatchers(POST, "/api/v1/management/**").hasAnyAuthority(ADMIN_CREATE.name(), MANAGER_CREATE.getPermission())
+                                        .requestMatchers(PUT, "/api/v1/management/**").hasAnyAuthority(ADMIN_UPDATE.name(), MANAGER_UPDATE.name())
+                                        .requestMatchers(DELETE, "/api/v1/management/**").hasAnyAuthority(ADMIN_DELETE.name(), MANAGER_DELETE.name())
+
+                                        // Burada admin endpoint'i için sadece ADMIN'e rol ve yetkilendirme verdik.
+                                        /*.requestMatchers("/api/v1/admin/**").hasRole(ADMIN.name())
+                                        .requestMatchers(GET, "/api/v1/admin/**").hasAuthority(ADMIN_READ.name())
+                                        .requestMatchers(POST, "/api/v1/admin/**").hasAuthority(ADMIN_CREATE.name())
+                                        .requestMatchers(PUT, "/api/v1/admin/**").hasAuthority(ADMIN_UPDATE.name())
+                                        .requestMatchers(DELETE, "/ap/api/v1/users/i/v1/admin/**").hasAuthority(ADMIN_DELETE.name())*/
+
+                                        // Bura da user endpoint'i için USER, MANAGER ve ADMIN'e rol ve yetkilendirme verdik.
+                                        .requestMatchers("/api/v1/users/**").hasAnyRole(ADMIN.name(), MANAGER.name(), USER.name())
+                                        .requestMatchers(GET, "/api/v1/users/**").hasAnyAuthority(ADMIN_READ.name(), MANAGER_READ.name(), USER.name())
+
                                         .anyRequest()
                                         .authenticated()
                 )
