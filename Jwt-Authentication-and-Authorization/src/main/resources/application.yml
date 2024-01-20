@@ -16,6 +16,19 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     database: postgresql
 
+application:
+  security:
+    jwt:
+      secret-key: A9pPomvZ5vkCC8OWRCkqrBn4k8EftWAxRG2enCUi0Xfzze7xEwrqmayQUF2btuo3mhOlMJR+Bo4OqMoZUOPuYg==
+      bearer: "Bearer "
+      expiration: 60000
+      refresh-token:
+        expiration: 86400000
+
+
+#      tokenPrefix: Bearer
+#      tokenPrefix: Bearer
+#      expiration: 86400000
 #  application:
 #    jwt:
 #      secret: A9pPomvZ5vkCC8OWRCkqrBn4k8EftWAxRG2enCUi0Xfzze7xEwrqmayQUF2btuo3mhOlMJR+Bo4OqMoZUOPuYg==
